@@ -1,0 +1,176 @@
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "stm32f10x.h"
+
+#define DEBUG_UART_BUF_TX_SIZE 100
+#define DEBUG_UART_BUF_RX_SIZE 100
+#define DEBUG_UART_ENDL_CHAR '\r'
+
+char debug_uart_buf_tx[DEBUG_UART_BUF_TX_SIZE];
+uint32_t debug_uart_head_tx;
+uint32_t debug_uart_tail_tx;
+
+char debug_uart_buf_rx[DEBUG_UART_BUF_RX_SIZE];
+uint32_t debug_uart_head_rx;
+volatile uint32_t debug_uart_tail_rx;
+
+char debug_uart_framebuf[100];
+uint32_t debug_uart_flag;
+
+uint32_t ticks;
+
+void debug_uart_putc(char c){
+	debug_uart_buf_tx[debug_uart_head_tx] = c;
+	if(debug_uart_head_tx < (DEBUG_UART_BUF_TX_SIZE-1)){
+		debug_uart_head_tx++;
+	}else{
+		debug_uart_head_tx = 0;
+	}
+	if(debug_uart_head_tx == debug_uart_tail_tx){
+		//overflow of buffer
+		return;
+	}
+	if(USART1->SR & USART_SR_TXE){
+		USART1->DR = debug_uart_buf_tx[debug_uart_tail_tx];
+		if(debug_uart_tail_tx < (DEBUG_UART_BUF_TX_SIZE-1)){
+			debug_uart_tail_tx++;
+		}else{
+			debug_uart_tail_tx=0;
+		}
+	}
+}
+
+void debug_uart_puts(char * str){
+	for(uint32_t i = 0; i<strlen(str); i++){
+		debug_uart_putc(str[i]);
+	}
+}
+
+//just simple delay for demonstration
+void LoopDelay(volatile uint32_t n) {
+	while(n > 0) n--;
+}
+
+int main(void){
+
+	//processor starts up with pll configured for 72Mhz. (we will change it in future to make it fail-save) Let's change that for now to 36Mhz
+
+	RCC->CR |= (RCC_CR_HSION);					//turn on HSI oscillator (8Mhz)
+	while(!(RCC->CR & RCC_CR_HSIRDY));			//wait until oscillator starts
+
+	RCC->CFGR &= ~(RCC_CFGR_SW);				//set SYSCLK to HSI (for the PLL configuration)
+	while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI);	//wait until it switches
+
+	RCC->CR &= ~(RCC_CR_PLLON);					//turn off PLL (to be able to change parameters)
+
+	RCC->CFGR &= ~(RCC_CFGR_PLLSRC);			//select PLL input as HSI/2
+	RCC->CFGR |= (RCC_CFGR_PLLMULL9);			//set PLL multiplier to x9
+
+	RCC->CR |= RCC_CR_PLLON;					//turn PLL back on
+	while(!(RCC->CR & RCC_CR_PLLRDY));			//wait until it locks
+
+	RCC->CFGR = (RCC->CFGR | RCC_CFGR_SW_1) | (RCC->CFGR & ~(RCC_CFGR_SW_0)); 	//set SYSCLK to PLL
+	while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL);	//wait until it switches
+
+	RCC->CFGR |= (RCC_CFGR_MCO_SYSCLK);			//set MCO to output sysclk
+
+	RCC->APB2ENR |= (RCC_APB2ENR_IOPCEN);		//enable Clock for GPIOC periph
+	RCC->APB2ENR |= (RCC_APB2ENR_IOPAEN);		//enable Clock for GPIOA periph
+
+	GPIOA->CRH |= GPIO_CRH_MODE8;				//set PA8 as output with drive strenght to 50Mhz
+	GPIOA->CRH = ((GPIOA->CRH | GPIO_CRH_CNF8_1) & ~(GPIO_CRH_CNF8_0));	//set PA8 to push-pull alternate function
+
+	GPIOA->CRH |= GPIO_CRH_MODE9;				//set PA9 as output with drive strenght to 50Mhz
+	GPIOA->CRH = ((GPIOA->CRH | GPIO_CRH_CNF9_1) & ~(GPIO_CRH_CNF9_0));	//set PA9 to push-pull alternate function
+	GPIOA->CRH &= ~(GPIO_CRH_MODE10);				//set PA10 as output with drive strenght to 50Mhz
+	GPIOA->CRH = ((GPIOA->CRH | GPIO_CRH_CNF10_1) & ~(GPIO_CRH_CNF10_0));	//set PA10 to push-pull alternate function
+
+	GPIOC->CRH |= GPIO_CRH_MODE8_0;				//set PC8 as output with drive strenght to 10Mhz
+	GPIOC->CRH &= ~(GPIO_CRH_CNF8_0 | GPIO_CRH_CNF8_1);	//set PC8 to push-pull normal operation
+
+	RCC->APB2ENR |= (RCC_APB2ENR_USART1EN);		//enable Clock for USART1 periph
+
+	USART1->BRR |= (39 << 4) | 1;				//set USART1 baud rate to 57600
+	USART1->CR1 &= ~(USART_CR1_M);				//set USART1 working mode to 8/1
+	USART1->CR1 |= (USART_CR1_TCIE) | (USART_CR1_RXNEIE);
+	USART1->CR1 |= USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;				//enable USART1
+
+	NVIC_EnableIRQ(USART1_IRQn);
+
+	while (1){
+
+		if(debug_uart_flag){
+			char * str = &debug_uart_buf_rx[debug_uart_tail_rx];
+			if(debug_uart_tail_rx < debug_uart_head_rx){
+				strcpy(debug_uart_framebuf,str);
+			}else{
+				uint32_t len = DEBUG_UART_BUF_RX_SIZE - debug_uart_tail_rx;
+				memcpy(debug_uart_framebuf,str,len);
+				memcpy(&debug_uart_framebuf[len],&debug_uart_buf_rx[0],debug_uart_flag-1);
+			}
+			debug_uart_puts(debug_uart_framebuf);
+			debug_uart_puts("\r\n");
+			if(debug_uart_buf_rx[debug_uart_flag] == '\n')
+			debug_uart_tail_rx = debug_uart_flag+1; else debug_uart_tail_rx = debug_uart_flag;
+			debug_uart_flag = 0;
+		}
+
+//		char ticks_ch[20];
+//		itoa(ticks,ticks_ch,10);
+//		debug_uart_puts("Hello World! -- ");
+//		debug_uart_puts(ticks_ch);
+//		debug_uart_puts("\r\n");
+//		ticks++;
+
+//		GPIOC->BSRR |= GPIO_BSRR_BS8;				//set PC8 HIGH
+//		LoopDelay(65000);
+//		LoopDelay(65000);
+//		LoopDelay(65000);
+//		LoopDelay(65000);
+//
+//		GPIOC->BSRR |= GPIO_BSRR_BR8;				//set PC8 LOW
+//		LoopDelay(65000);
+//		LoopDelay(65000);
+//		LoopDelay(65000);
+//		LoopDelay(65000);
+
+	}
+}
+
+void USART1_IRQHandler(void){
+
+	if(USART1->SR & USART_SR_TC){
+		USART1->SR &= ~USART_SR_TC;				//reset interrupt flag
+		if(debug_uart_tail_tx != debug_uart_head_tx){
+			USART1->DR = debug_uart_buf_tx[debug_uart_tail_tx];
+
+			if(debug_uart_tail_tx < (DEBUG_UART_BUF_TX_SIZE-1)){
+				debug_uart_tail_tx++;
+			}else{
+				debug_uart_tail_tx=0;
+			}
+		}
+	}
+
+	if(USART1->SR & USART_SR_RXNE){
+		USART1->SR &= ~USART_SR_RXNE;				//reset interrupt flag
+
+		debug_uart_buf_rx[debug_uart_head_rx] = USART1->DR;
+		if(debug_uart_buf_rx[debug_uart_head_rx] == DEBUG_UART_ENDL_CHAR){
+			debug_uart_buf_rx[debug_uart_head_rx] = 0;
+			debug_uart_flag = debug_uart_head_rx+1;
+		}
+		if(debug_uart_head_rx < (DEBUG_UART_BUF_RX_SIZE-1)){
+			debug_uart_head_rx++;
+		}else{
+			debug_uart_head_rx = 0;
+		}
+		if(debug_uart_head_rx == debug_uart_tail_rx){
+			//overflow of buffer
+			return;
+		}
+	}
+
+}

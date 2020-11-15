@@ -1,0 +1,312 @@
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "stm32f10x.h"
+
+#include "DEBUG_UART/debug_uart.h"
+#include "NRF24L01regs.h"
+
+#define CSN_HIGH	GPIOA->BSRR = GPIO_BSRR_BS4
+#define CSN_LOW		GPIOA->BSRR = GPIO_BSRR_BR4
+
+#define CE_HIGH		GPIOA->BSRR = GPIO_BSRR_BS3
+#define CE_LOW		GPIOA->BSRR = GPIO_BSRR_BR3
+
+char debug_uart_framebuf[100];
+
+//just simple delay for demonstration
+void LoopDelay(volatile uint64_t n) {
+	while(n > 0) n--;
+}
+
+uint8_t SPI_transmit_recieve( uint8_t byte ){
+	SPI1->DR = byte;
+	while(!(SPI1->SR & SPI_SR_RXNE));
+	return SPI1->DR;
+}
+
+void SPI_write_buf( uint8_t* data, uint8_t len ){
+	for(uint8_t i = 0; i<len; i++){
+		SPI1->DR = data[i];
+		while(!(SPI1->SR & SPI_SR_RXNE));
+		uint8_t a = SPI1->DR;
+	}
+}
+
+void SPI_read_buf( uint8_t* data, uint8_t len ){
+	for(uint8_t i = 0; i<len; i++){
+		SPI1->DR = 0x00;
+		while(!(SPI1->SR & SPI_SR_RXNE));
+		data[i] = SPI1->DR;
+	}
+}
+
+void NRF_write_command( uint8_t command , uint8_t* data, uint8_t len){
+	CSN_LOW;
+	SPI_transmit_recieve(command);
+	SPI_write_buf(data, len);
+	CSN_HIGH;
+}
+
+void NRF_read_command( uint8_t command , uint8_t* data, uint8_t len){
+	CSN_LOW;
+	SPI_transmit_recieve(command);
+	SPI_read_buf(data, len);
+	CSN_HIGH;
+}
+
+void NRF_write_reg8( uint8_t reg, uint8_t byte){
+	CSN_LOW;
+	SPI_transmit_recieve(CMD_W_REGISTER | reg);
+	SPI_transmit_recieve(byte);
+	CSN_HIGH;
+}
+
+uint8_t NRF_read_reg8( uint8_t reg ){
+	CSN_LOW;
+	SPI_transmit_recieve(CMD_R_REGISTER | reg);
+	uint8_t byte = SPI_transmit_recieve(0);
+	CSN_HIGH;
+	return byte;
+}
+
+uint8_t NRF_is_connected(){
+	uint8_t old =  NRF_read_reg8(0);
+	NRF_write_reg8(0, 0x0f);
+	uint8_t read = NRF_read_reg8(0);
+	NRF_write_reg8(0,old);
+	if(read == 0x0f) return 1; else return 0;
+}
+
+uint8_t rx_addr0[5] = {0x01,0x01,0x01,0x01,0x01};
+uint8_t rx_addr1[5] = {0xf0,0xf0,0xf0,0xf0,0xf0};
+uint8_t rx_addr2[5] = {0x02,0x02};
+uint8_t rx_addr3[5] = {0x03,0x03};
+uint8_t rx_addr4[5] = {0x04,0x04};
+uint8_t rx_addr5[5] = {0x05,0x05};
+
+uint8_t tx_addr[5] = {0x00,0x00,0x00,0x00,0x00};
+
+//uint8_t rx_addr0[5] = {0x00,0x00,0x00,0x00,0x00};
+//uint8_t rx_addr1[5] = {0x01,0x01,0x01,0x01,0x01};
+//uint8_t rx_addr2[5] = {0x02,0x02};
+//uint8_t rx_addr3[5] = {0x03,0x03};
+//uint8_t rx_addr4[5] = {0x04,0x04};
+//uint8_t rx_addr5[5] = {0x05,0x05};
+//
+//uint8_t tx_addr[5] = {0x01,0x01,0x01,0x01,0x01};
+
+void NRF_RX_mode(){
+	CE_LOW;
+	NRF_write_reg8(REG_CONFIG, NRF_read_reg8(REG_CONFIG) | (1<<CONFIG_PRIM_RX) );
+	CE_HIGH;
+	LoopDelay(10000);
+}
+
+void NRF_TX_mode(){
+	CE_LOW;
+	NRF_write_reg8(REG_CONFIG, NRF_read_reg8(REG_CONFIG) & (~(1<<CONFIG_PRIM_RX)) );
+	NRF_write_reg8(REG_CONFIG, NRF_read_reg8(REG_CONFIG) | ((1<<CONFIG_PWR_UP)) );
+	LoopDelay(10000);
+}
+
+void NRF_send_packet( uint8_t* data, uint8_t len){
+	NRF_write_command(CMD_W_TX_PAYLOAD, data, len);
+}
+
+void NRF_init(){
+	LoopDelay(100000);
+	NRF_write_reg8(REG_EN_AA, 0x3F);		//enable AA on all pipes
+	NRF_write_reg8(REG_EN_RXADDR, 0x3F);	//enable all RX adresses
+	NRF_write_reg8(REG_SETUP_AW, 0x03);		//set adress witdh to 5bytes
+	NRF_write_reg8(REG_SETUP_RETR, 0xee);	//set retransimition data
+	NRF_write_reg8(REG_RF_CH, 80);		//set rf channel
+	NRF_write_reg8(REG_RF_SETUP, 0x00);		//set power to max
+	NRF_write_reg8(REG_STATUS, 0x70);		//clear interrupts
+	NRF_write_command(CMD_W_REGISTER | REG_RX_ADDR_P0, rx_addr0, 5);
+	NRF_write_command(CMD_W_REGISTER | REG_RX_ADDR_P1, rx_addr1, 5);
+	NRF_write_command(CMD_W_REGISTER | REG_RX_ADDR_P2, rx_addr2, 2);
+	NRF_write_command(CMD_W_REGISTER | REG_RX_ADDR_P3, rx_addr3, 2);
+	NRF_write_command(CMD_W_REGISTER | REG_RX_ADDR_P4, rx_addr4, 2);
+	NRF_write_command(CMD_W_REGISTER | REG_RX_ADDR_P5, rx_addr5, 2);
+	NRF_write_command(CMD_W_REGISTER | REG_TX_ADDR, tx_addr, 5);
+	NRF_write_reg8(REG_DYNPD, 0x3F);		//all pipes variable length
+	NRF_write_reg8(REG_FEATURE, 0x05);		//enable features
+
+	NRF_write_reg8(REG_CONFIG, NRF_read_reg8(REG_CONFIG) | (1<<CONFIG_PWR_UP) );		//enable features
+	LoopDelay(65000);
+
+	NRF_RX_mode();
+}
+
+void debug_uart_str_event(char * str){
+	debug_uart_puts(str);
+	debug_uart_puts("\r\n");
+}
+
+#define DEBUG_MODULE_NAME0	"COR"		//core of application
+#define DEBUG_MODULE_NAME1	"PWR"		//power management
+#define DEBUG_MODULE_NAME2	"INT"		//interrupts
+#define DEBUG_MODULE_NAME3	"LOR"		//lora communication
+#define DEBUG_MODULE_NAME4	"SIG"		//signalling info
+
+typedef enum T_Debug_module{debug_module_CORE = 0, debug_module_POWER_MANEGEMENT, debug_module_INTTERRUPTS, debug_module_LORA, debug_module_SIGNALLING}T_Debug_module;
+
+typedef enum T_Debug_type{debug_type_INFO, debug_type_IMPORTANT, debug_type_WARNING, debug_type_ERROR}T_Debug_type;
+
+const char Debug_module_names[5][4] = {
+		{DEBUG_MODULE_NAME0},
+		{DEBUG_MODULE_NAME1},
+		{DEBUG_MODULE_NAME2},
+		{DEBUG_MODULE_NAME3},
+		{DEBUG_MODULE_NAME4}
+};
+
+const char Debug_type0[] = "INFO";
+const char Debug_type1[] = "IMPORTANT";
+const char Debug_type2[] = "WARNING";
+const char Debug_type3[] = "ERROR";
+
+const char * Debug_types[4]={
+		Debug_type0, Debug_type1, Debug_type2, Debug_type3
+};
+
+void Debug_log( T_Debug_module module, T_Debug_type type, char * msg){
+
+	debug_uart_putc('[');
+	debug_uart_puts(T_Debug_module[module]);
+	debug_uart_puts("][");
+	debug_uart_puts(Debug_types[type]);
+	debug_uart_putc(']');
+	debug_uart_puts(msg);
+}
+
+int main(void){
+
+	//processor starts up with pll configured for 72Mhz. (we will change it in future to make it fail-save) Let's change that for now to 36Mhz
+
+	RCC->CR |= (RCC_CR_HSION);					//turn on HSI oscillator (8Mhz)
+	while(!(RCC->CR & RCC_CR_HSIRDY));			//wait until oscillator starts
+
+	RCC->CFGR &= ~(RCC_CFGR_SW);				//set SYSCLK to HSI (for the PLL configuration)
+	while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI);	//wait until it switches
+
+	RCC->CR &= ~(RCC_CR_PLLON);					//turn off PLL (to be able to change parameters)
+
+	RCC->CFGR &= ~(RCC_CFGR_PLLSRC);			//select PLL input as HSI/2
+	RCC->CFGR |= (RCC_CFGR_PLLMULL9);			//set PLL multiplier to x9
+
+	RCC->CR |= RCC_CR_PLLON;					//turn PLL back on
+	while(!(RCC->CR & RCC_CR_PLLRDY));			//wait until it locks
+
+	RCC->CFGR = (RCC->CFGR | RCC_CFGR_SW_1) | (RCC->CFGR & ~(RCC_CFGR_SW_0)); 	//set SYSCLK to PLL
+	while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL);	//wait until it switches
+
+	RCC->CFGR |= (RCC_CFGR_MCO_SYSCLK);			//set MCO to output sysclk
+
+	RCC->APB2ENR |= (RCC_APB2ENR_IOPCEN);		//enable Clock for GPIOC periph
+	RCC->APB2ENR |= (RCC_APB2ENR_IOPAEN);		//enable Clock for GPIOA periph
+
+	RCC->APB2ENR |= (RCC_APB2ENR_SPI1EN);		//enable Clock for GPIOA periph
+
+	//mco output
+	GPIOA->CRH |= GPIO_CRH_MODE8;				//set PA8 as output with drive strenght to 50Mhz
+	GPIOA->CRH = ((GPIOA->CRH | GPIO_CRH_CNF8_1) & ~(GPIO_CRH_CNF8_0));	//set PA8 to push-pull alternate function
+
+	//uart i/o
+	GPIOA->CRH |= GPIO_CRH_MODE9;				//set PA9 as output with drive strenght to 50Mhz
+	GPIOA->CRH = ((GPIOA->CRH | GPIO_CRH_CNF9_1) & ~(GPIO_CRH_CNF9_0));	//set PA9 to push-pull alternate function
+	GPIOA->CRH &= ~(GPIO_CRH_MODE10);				//set PA10 as output with drive strenght to 50Mhz
+	GPIOA->CRH = ((GPIOA->CRH | GPIO_CRH_CNF10_1) & ~(GPIO_CRH_CNF10_0));	//set PA10 to push-pull alternate function
+
+	//onboard led
+	GPIOC->CRH |= GPIO_CRH_MODE8_0;				//set PC8 as output with drive strenght to 10Mhz
+	GPIOC->CRH &= ~(GPIO_CRH_CNF8_0 | GPIO_CRH_CNF8_1);	//set PC8 to push-pull normal operation
+
+	//spi to alternate
+	GPIOA->CRL |= GPIO_CRL_MODE5 | GPIO_CRL_MODE6 | GPIO_CRL_MODE7;	//output 50Mhz
+	GPIOA->CRL = ((GPIOA->CRL | GPIO_CRL_CNF5_1 | GPIO_CRL_CNF6_1 | GPIO_CRL_CNF7_1) & ~((GPIO_CRL_CNF5_0) | (GPIO_CRL_CNF6_0) | (GPIO_CRL_CNF7_0)));	//alternate funcion push-pull
+
+	//ce csn to output
+	GPIOA->CRL |= GPIO_CRL_MODE3_0 | GPIO_CRL_MODE4_0;	//output 50Mhz
+	GPIOA->CRL &= ~(GPIO_CRL_CNF3 | GPIO_CRL_CNF4);	//push-pull normal i/o
+
+	CSN_HIGH;
+
+	//spi config
+	SPI1->CR1 |= ( SPI_CR1_SSM | SPI_CR1_SSI | SPI_CR1_MSTR | SPI_CR1_BR_1 );	//set internal ss pin to high, master mode, and baud to /8
+	SPI1->CR1 |= SPI_CR1_SPE;	//enable spi
+
+	debug_uart_init();
+	register_debug_uart_event_callback(debug_uart_str_event);
+	NVIC_EnableIRQ(USART1_IRQn);
+
+	if(NRF_is_connected()){
+		for(uint8_t i = 0; i<10; i++){
+			GPIOC->ODR ^= GPIO_ODR_ODR8;
+			LoopDelay(100000);
+		}
+
+		NRF_init();
+
+	}else{
+		for(uint8_t i = 0; i<8; i++){
+			GPIOC->ODR ^= GPIO_ODR_ODR8;
+			LoopDelay(1000000);
+		}
+	}
+
+	while (1){
+		while(!(NRF_read_reg8(REG_STATUS) & 0x70));
+
+		if(NRF_read_reg8(REG_STATUS) & (1<<STATUS_RX_DR)){
+			LoopDelay(10000);
+			//uint8_t asd[6];
+			NRF_read_command(CMD_FLUSH_RX, 0, 0);
+			NRF_read_command(CMD_FLUSH_TX, 0, 0);
+			NRF_write_reg8(REG_STATUS, 0x70);		//clear interrupts
+			//NRF_RX_mode();
+			GPIOC->ODR ^= GPIO_ODR_ODR8;
+		}
+
+
+
+//		uint8_t data[3] = {0xaa,0xff,0x55};
+//
+//		NRF_write_command(CMD_FLUSH_TX, 0, 0);
+//		NRF_write_command(CMD_FLUSH_RX, 0, 0);
+//		NRF_TX_mode();
+//
+//		NRF_send_packet(data, 3);
+//
+//		CE_HIGH;
+//		LoopDelay(20);
+//		CE_LOW;
+//
+//		while(!(NRF_read_reg8(REG_STATUS) & 0x70));
+//		uint8_t stat = NRF_read_reg8(REG_STATUS);
+//		NRF_write_reg8(REG_STATUS, 0x70);		//clear interrupts
+//		if(stat & (1<<STATUS_MAX_RT) ){
+//			for(uint8_t i = 0; i<4; i++){
+//				GPIOC->ODR ^= GPIO_ODR_ODR8;
+//				LoopDelay(1000000);
+//			}
+//		}
+//		if(stat & (1<<STATUS_TX_DS) ){
+//			for(uint8_t i = 0; i<8; i++){
+//				GPIOC->ODR ^= GPIO_ODR_ODR8;
+//				LoopDelay(1000000);
+//			}
+//		}
+//		LoopDelay(2000000);
+
+
+		//GPIOC->BSRR = GPIO_BSRR_BS8;
+		//LoopDelay(650000);
+		//GPIOC->BSRR = GPIO_BSRR_BR8;
+
+		//DEBUG_UART_EVENT(debug_uart_framebuf);
+
+	}
+}

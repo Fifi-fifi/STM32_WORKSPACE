@@ -1,0 +1,16 @@
+core_cm3.h:930:22:NVIC_EnableIRQ	16	static
+main.c:19:6:LoopDelay	16	static
+main.c:23:9:SPI_transmit_recieve	16	static
+main.c:29:6:SPI_write_buf	24	static
+main.c:37:6:SPI_read_buf	24	static
+main.c:45:6:NRF_write_command	16	static
+main.c:52:6:NRF_read_command	16	static
+main.c:59:6:NRF_write_reg8	16	static
+main.c:66:9:NRF_read_reg8	24	static
+main.c:74:9:NRF_is_connected	16	static
+main.c:100:6:NRF_RX_mode	8	static
+main.c:107:6:NRF_TX_mode	8	static
+main.c:114:6:NRF_send_packet	16	static
+main.c:118:6:NRF_init	8	static
+main.c:173:6:debug_uart_str_event	16	static
+main.c:178:5:main	24	static

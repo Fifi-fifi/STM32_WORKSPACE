@@ -1,0 +1,12 @@
+17:40:40 **** Incremental Build of configuration Debug for project AN3964-Temperature_sensor ****
+Info: Internal Builder is used for build
+arm-atollic-eabi-gcc -c -mthumb -mcpu=cortex-m3 -g -Wa,--warn -x assembler-with-cpp -specs=nano.specs -o Libraries\CMSIS\Device\ST\STM32L1xx\Source\Templates\TrueSTUDIO\startup_stm32l1xx_md.o ..\Libraries\CMSIS\Device\ST\STM32L1xx\Source\Templates\TrueSTUDIO\startup_stm32l1xx_md.s 
+arm-atollic-eabi-gcc -c -mthumb -mcpu=cortex-m3 -std=gnu11 -DUSE_STDPERIPH_DRIVER -DSTM32L1XX_MD -I..\..\..\ -I..\..\..\inc -IC:\STM32_WORKSPACE\AN3964-Temperature_sensor\Libraries\CMSIS\Device\ST\STM32L1xx\Include -I..\..\..\..\..\Libraries\CMSIS\Include -I..\..\..\..\..\Libraries\CMSIS\Device\ST\STM32L1xx\Include -I..\..\..\..\..\Libraries\STM32L1xx_StdPeriph_Driver\inc -I..\..\..\..\..\Utilities\STM32L-DISCOVERY -IC:\STM32_WORKSPACE\AN3964-Temperature_sensor\Libraries\STM32L1xx_StdPeriph_Driver\inc -IC:\STM32_WORKSPACE\AN3964-Temperature_sensor\Libraries\STMTouch_Driver\inc -Os -ffunction-sections -fdata-sections -g -fstack-usage -Wall -mlong-calls -Wno-pointer-sign -Wno-missing-braces -Wformat=0 -specs=nano.specs -o src\system_stm32l1xx.o ..\src\system_stm32l1xx.c 
+In file included from ..\src\system_stm32l1xx.c:99:0:
+C:\STM32_WORKSPACE\AN3964-Temperature_sensor\Libraries\CMSIS\Device\ST\STM32L1xx\Include/stm32l1xx.h:286:22: fatal error: core_cm3.h: No such file or directory
+ #include "core_cm3.h"
+                      ^
+compilation terminated.
+
+17:40:41 Build Finished (took 312ms)
+

@@ -1,0 +1,14 @@
+main.c:66:9:RFM_write_reg	16	static
+main.c:74:6:RFM_write_buf	24	static
+main.c:80:9:RFM_read_reg	16	static
+main.c:88:6:RFM_read_buf	32	static
+main.c:96:9:RFM_is_connected	24	static
+main.c:112:6:RFM_power_down	24	static
+main.c:125:6:RFM_RX_mode	24	static
+main.c:142:6:RFM_TX_mode	24	static
+main.c:155:6:RFM_Switch_CFG	32	static
+main.c:165:6:RFM_set_channel	16	static
+main.c:169:6:RFM_Init	32	static
+main.c:251:9:Send_Packet	32	static
+main.c:283:9:Receive_Packet	40	static
+main.c:317:5:main	48	static

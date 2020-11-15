@@ -1,0 +1,8 @@
+debug_uart.c:10:6:register_debug_uart_event_callback	16	static
+debug_uart.c:24:6:debug_uart_init	4	static
+debug_uart.c:32:6:debug_uart_putc	24	static
+debug_uart.c:40:5:debug_uart_getc	16	static
+debug_uart.c:48:8:debug_uart_gstr	24	static
+debug_uart.c:62:6:DEBUG_UART_EVENT	16	static
+debug_uart.c:74:6:debug_uart_puts	24	static
+debug_uart.c:80:6:USART1_IRQHandler	16	static

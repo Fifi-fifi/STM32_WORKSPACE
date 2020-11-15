@@ -1,0 +1,243 @@
+#include <stddef.h>
+#include <stdlib.h>
+#include "stm32l1xx.h"
+#include "common.h"
+
+#include "LCD/lcd.h"
+
+void LoopDelay(volatile uint32_t n) {
+	while(n > 0) n--;
+}
+
+int main(void){
+
+	//------------------------------------CLOCK CONFIGURATION
+
+//	RCC->CR |= (RCC_CR_MSION);					//enable multi-speed internal oscillator
+//	while(!(RCC->CR & RCC_CR_MSIRDY));			//wait until oscillator starts
+
+	RCC->CR |= RCC_CR_HSION; 					//enable high-speed internal oscillator
+	while (!(RCC->CR & RCC_CR_HSIRDY)); 		//wait until oscillator starts
+
+//	RCC->ICSCR = ( RCC->ICSCR & ~(RCC_ICSCR_MSIRANGE)) //clear the msi freq def-lt
+//	| (RCC_ICSCR_MSIRANGE_4);					//set the msi freq to ~1Mhz
+
+	RCC->CFGR |= (RCC_CFGR_SW);					//set system clock source to hsi
+	RCC->CFGR &= ~(RCC_CFGR_HPRE);				//set ahb prescaler to not divide
+
+	//RCC->CFGR |= (RCC_CFGR_MCOSEL_SYSCLK);		//set mco output to sysclk
+
+	RCC->AHBENR |= (RCC_AHBENR_GPIOAEN);		//enable clock for PORTA peripheral
+	RCC->AHBENR |= (RCC_AHBENR_GPIOBEN);		//enable clock for PORTB peripheral
+	RCC->AHBENR |= (RCC_AHBENR_GPIOCEN);		//enable clock for PORTC peripheral
+
+	RCC->APB2ENR |= (RCC_APB2ENR_ADC1EN);		//enable clock for ADC1 peripheral
+
+	RCC->APB1ENR |= (RCC_APB1ENR_LCDEN);		//enable clock for LCD peripheral
+	RCC->APB1ENR |= (RCC_APB1ENR_PWREN);		//enable clock for PWRMGT peripheral
+	RCC->APB1ENR |= (RCC_APB1ENR_TIM2EN);		//enable clock for TIM2 peripheral
+	RCC->APB1ENR |= (RCC_APB1ENR_TIM3EN);		//enable clock for TIM2 peripheral
+
+	PWR->CR |= (PWR_CR_DBP);					//unlock RCC_CSR register
+
+	RCC->CSR |= (RCC_CSR_LSION);				//enable low-speed internal oscillator
+	RCC->CSR |= (RCC_CSR_RTCSEL_1);				//set lcd and rtc clock to lsi
+
+	//------------------------------------CLOCK CONFIGURATION
+
+	//------------------------------------INTERRUPTS
+
+	SYSCFG->EXTICR[0] &= ~(SYSCFG_EXTICR1_EXTI0); 	//set exti0 line to PA0 (userbutton)
+	EXTI->IMR |= (EXTI_IMR_MR0);					//mask interrupt exti0 line
+	EXTI->EMR |= (EXTI_EMR_MR0);					//mask event exti0 line
+	EXTI->RTSR |= (EXTI_RTSR_RT0);					//rising edge of exti0 generates interrupt
+
+	//NVIC_EnableIRQ(EXTI0_IRQn);
+
+	//------------------------------------INTERRUPTS
+
+	//------------------------------------IO CONFIGURATION
+
+	GPIOB->MODER |= (GPIO_MODER_MODER7_0); 		//set PB7 mode to general purpose out
+	GPIOB->OTYPER &= ~(GPIO_OTYPER_OT_7);		//set PB7 type to push-pull
+	GPIOB->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR7_1);	//set PB7 speed to high
+	GPIOB->PUPDR &= ~(GPIO_PUPDR_PUPDR7_0);		//set PB7 pu/pd to no pull
+
+//	GPIOA->MODER |= (GPIO_MODER_MODER8_1); 		//set PA8 mode to alternate function
+//	GPIOA->OTYPER &= ~(GPIO_OTYPER_OT_8);		//set PA8 type to push-pull
+//	GPIOA->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR8_1);	//set PA8 speed to high
+//	GPIOA->PUPDR &= ~(GPIO_PUPDR_PUPDR8_0);		//set PA8 pu/pd to no pull
+//	GPIOA->AFR[1] &= ~0xf;						//set PA8 alternate function as mco
+
+	LcdIoInit();
+
+	//------------------------------------IO CONFIGURATION
+
+	//------------------------------------LCD CONFIGURATION
+
+	LCD->FCR = (LCD->FCR & ~(LCD_FCR_PON))		//clear the pulse duration bits
+	| (4<<4);									//set lcd puse duration to 4
+
+	LCD->FCR = (LCD->FCR & ~(LCD_FCR_CC))		//clear contrast bits
+	| (5<<10);									//set lcd contrast to 5
+
+	LCD->FCR = (LCD->FCR & ~(LCD_FCR_PS))		//clear the lcd clock prescaler
+	| (2<<22);									//set lcd clock prescaler to /2
+	LCD->FCR |= (4<<18);						//set the lcd div to /20
+
+	LCD->CR |= (LCD_CR_BIAS_1);					//set lcd bias to 1/3
+	LCD->CR |= (LCD_CR_DUTY_0)|(LCD_CR_DUTY_1);	//set lcd duty to 1/4
+	//LCD->CR |= (LCD_CR_VSEL);					//set lcd vsel to external pin
+	LCD->FCR |= (LCD_FCR_HD);					//enable vlcd hard-drive
+	LCD->FCR |= (LCD_FCR_CC_0)|(LCD_FCR_CC_1);  //set lcd voltage to ~3v
+	LCD->CR |= (LCD_CR_MUX_SEG);				//set lcd multiplex to upper
+
+	LCD->CR |= (LCD_CR_LCDEN);					//enable lcd pheripherial
+
+	LoopDelay(150);								//wait until lcd starts
+
+	//------------------------------------LCD CONFIGURATION
+
+	//------------------------------------ADC CONFIGURATION
+
+//	ADC->CCR &= ~(ADC_CCR_ADCPRE);				//set adc clock divider to /1
+//	ADC->CCR |= (ADC_CCR_TSVREFE);				//turn on internal temp sensor and refint
+//
+//	ADC1->SQR1 &= ~(ADC_SQR1_L);				//set sequence length to 1
+//	ADC1->SQR5 |= 16;							//set channel to IN16
+//
+//	ADC1->CR1 |= (ADC_CR1_RES_0);				//set resolution to 10 bit
+//	ADC1->CR2 |= (ADC_CR2_EOCS);				//set event to each conversion
+//	ADC1->CR2 &= ~(ADC_CR2_CONT);				//set mode to single conversion
+//
+//	ADC1->CR2 |= (ADC_CR2_ADON);				//turn on adc
+//	while (!(ADC1->SR & ADC_SR_ADONS)); 		// Wait until ADC is on
+//	ADC1->CR2 |= (ADC_CR2_SWSTART);             //start single converion
+
+	//------------------------------------ADC CONFIGURATION
+
+	//------------------------------------TIM2 CONFIGURATION
+
+	TIM3->PSC = 100000;							//set timer2 prescaler to 100000
+	TIM3->ARR = 10;								//set timer2 auto-reload value to 10
+	TIM3->CR1 |= (TIM_CR1_DIR);					//set timer2 as down-counter
+
+	TIM3->DIER |= (TIM_DIER_UIE);				//enable timer2 interrupt on overflow
+	TIM3->CR1 |= (TIM_CR1_CEN);					//enable timer2
+
+	NVIC_EnableIRQ(TIM3_IRQn);
+
+	//------------------------------------TIM2 CONFIGURATION
+
+	//------------------------------------TIM3 CONFIGURATION
+
+	TIM2->PSC = 16000;							//set timer2 prescaler to 100000
+	TIM2->ARR = 0;								//set timer2 auto-reload value to 10
+	TIM2->CR1 &= ~(TIM_CR1_DIR);				//set timer2 as up-counter
+
+	TIM2->DIER |= (TIM_DIER_UIE);				//enable timer2 interrupt on capture
+	TIM2->CR1 |= (TIM_CR1_CEN);					//enable timer2
+
+	NVIC_EnableIRQ(TIM2_IRQn);
+
+	//------------------------------------TIM3 CONFIGURATION
+
+	LcdPrintString(0,"-FiFi-");
+
+	LcdUpdate();
+
+	while (1){
+
+//		if(TIM2->CNT == 100){
+//			GPIOB->BSRR |= (GPIO_BSRR_BS_7);		//set PB7 HIGH
+//
+//			LcdPrintBar(i);
+//			LcdPrintChar(5,i+'0');
+//			if(i>8) i = 0;
+//			if(up) i = i <<1; else i = i >>1;
+//			if(i==8) up = 0;
+//			if(i==1) up = 1;
+//			LcdUpdate();
+//		}else if(TIM2->CNT == 200){
+//			GPIOB->BSRR |= (GPIO_BSRR_BR_7);		//set PB7 LOW
+//		}
+
+//		if(ADC->CSR & (ADC_CSR_EOC1)){
+//
+//
+//		    ADC1->CR2 |= (ADC_CR2_SWSTART);
+//			LcdUpdate();
+//		}
+
+	}
+
+	return 0;
+}
+
+uint8_t i = 1;
+uint8_t up = 1;
+uint8_t cnt;
+
+void TIM3_IRQHandler(void){
+	if(TIM3->SR & TIM_SR_UIF){
+		TIM3->SR &= ~TIM_SR_UIF;
+
+		LcdPrintBar(i);
+		if(i>8) i = 0;
+		if(up) i = i <<1; else i = i >>1;
+		if(i==8) up = 0;
+		if(i==1) up = 1;
+		LcdUpdate();
+		if(cnt == 0){
+			GPIOB->BSRR |= (GPIO_BSRR_BS_7);
+			cnt = 1;
+		}else{
+			GPIOB->BSRR |= (GPIO_BSRR_BR_7);
+			cnt = 0;
+		}
+	}
+}
+
+void EXTI0_IRQHandler(void){
+	EXTI->PR |= (EXTI_PR_PR0);						//reset interrupt flag
+	LcdPrintString(0,"-exti-");
+//	if(TIM2->SR & TIM_SR_UIF){
+//		TIM2->SR &= ~TIM_SR_UIF;
+//
+//		LcdPrintBar(i);
+//		if(i>8) i = 0;
+//		if(up) i = i <<1; else i = i >>1;
+//		if(i==8) up = 0;
+//		if(i==1) up = 1;
+//		LcdUpdate();
+//		if(cnt == 0){
+//			GPIOB->BSRR |= (GPIO_BSRR_BS_7);
+//			cnt = 1;
+//		}else{
+//			GPIOB->BSRR |= (GPIO_BSRR_BR_7);
+//			cnt = 0;
+//		}
+//	}
+}
+
+void TIM2_IRQHandler(void){
+	TIM2->SR &= ~TIM_SR_UIF;				//reset interrupt flag
+	LcdPrintString(0,"-time-");
+//	if(TIM2->SR & TIM_SR_UIF){
+//		TIM2->SR &= ~TIM_SR_UIF;
+//
+//		LcdPrintBar(i);
+//		if(i>8) i = 0;
+//		if(up) i = i <<1; else i = i >>1;
+//		if(i==8) up = 0;
+//		if(i==1) up = 1;
+//		LcdUpdate();
+//		if(cnt == 0){
+//			GPIOB->BSRR |= (GPIO_BSRR_BS_7);
+//			cnt = 1;
+//		}else{
+//			GPIOB->BSRR |= (GPIO_BSRR_BR_7);
+//			cnt = 0;
+//		}
+//	}
+}

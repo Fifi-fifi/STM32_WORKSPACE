@@ -1,0 +1,10 @@
+17:45:01 **** Incremental Build of configuration Debug for project STM32L152RB(STM32L-Discovery) ****
+Info: Internal Builder is used for build
+arm-atollic-eabi-gcc -c -mthumb -mcpu=cortex-m3 -std=gnu11 -DUSE_STDPERIPH_DRIVER -DSTM32L1XX_MD -I..\..\..\ -I..\..\..\inc -I..\..\..\..\..\Libraries\CMSIS\Include -I..\..\..\..\..\Libraries\CMSIS\Device\ST\STM32L1xx\Include -I..\..\..\..\..\Libraries\STM32L1xx_StdPeriph_Driver\inc -I..\..\..\..\..\Utilities\STM32L-DISCOVERY -Os -ffunction-sections -fdata-sections -g -fstack-usage -Wall -mlong-calls -Wno-pointer-sign -Wno-missing-braces -Wformat=0 -specs=nano.specs -o STM32L1xx_StdPeriph_Driver\src\stm32l1xx_fsmc.o ..\STM32L1xx_StdPeriph_Driver\src\stm32l1xx_fsmc.c 
+..\STM32L1xx_StdPeriph_Driver\src\stm32l1xx_fsmc.c:33:28: fatal error: stm32l1xx_fsmc.h: No such file or directory
+ #include "stm32l1xx_fsmc.h"
+                            ^
+compilation terminated.
+
+17:45:01 Build Finished (took 141ms)
+

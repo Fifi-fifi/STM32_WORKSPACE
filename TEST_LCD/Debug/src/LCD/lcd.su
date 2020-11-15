@@ -1,0 +1,6 @@
+lcd.c:28:6:LcdPrintChar	24	static
+lcd.c:44:6:LcdPrintString	16	static
+lcd.c:53:6:LcdPrintDot	24	static
+lcd.c:62:6:LcdPrintBar	24	static
+lcd.c:69:6:LcdUpdate	4	static
+lcd.c:74:6:LcdIoInit	4	static

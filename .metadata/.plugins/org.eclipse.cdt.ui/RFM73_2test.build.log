@@ -1,0 +1,155 @@
+17:09:27 **** Incremental Build of configuration Debug for project RFM73_2test ****
+Info: Internal Builder is used for build
+arm-atollic-eabi-gcc -c ..\src\main.c -mthumb -mcpu=cortex-m3 -std=gnu11 -DSTM32F10X_XL -DUSE_STDPERIPH_DRIVER -I../src -I../Libraries/STM32F10x_StdPeriph_Driver/inc -I../Libraries/CMSIS/Device/ST/STM32F10x/Include -I../Libraries/CMSIS/Include -O0 -ffunction-sections -fdata-sections -g -fstack-usage -Wall -specs=nano.specs -o src\main.o 
+..\src\main.c: In function 'main':
+..\src\main.c:338:5: error: 'RCC_TypeDef {aka struct <anonymous>}' has no member named 'AHB2ENR'; did you mean 'AHBENR'?
+  RCC->AHB2ENR |= (RCC_APB2ENR_IOPAEN);  //enable clock for PORTA peripherial
+     ^~
+..\src\main.c:339:5: error: 'RCC_TypeDef {aka struct <anonymous>}' has no member named 'AHB2ENR'; did you mean 'AHBENR'?
+  RCC->AHB2ENR |= (RCC_APB2ENR_IOPCEN);  //enable clock for PORTC peripherial
+     ^~
+..\src\main.c:343:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'MODER'; did you mean 'ODR'?
+  GPIOA->MODER &= ~(GPIO_MODER_MODER8);
+       ^~
+..\src\main.c:343:20: error: 'GPIO_MODER_MODER8' undeclared (first use in this function)
+  GPIOA->MODER &= ~(GPIO_MODER_MODER8);
+                    ^~~~~~~~~~~~~~~~~
+..\src\main.c:343:20: note: each undeclared identifier is reported only once for each function it appears in
+..\src\main.c:344:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'MODER'; did you mean 'ODR'?
+  GPIOA->MODER |= GPIO_MODER_MODER8_1;  //set PA8 as alternate funcion
+       ^~
+..\src\main.c:344:18: error: 'GPIO_MODER_MODER8_1' undeclared (first use in this function)
+  GPIOA->MODER |= GPIO_MODER_MODER8_1;  //set PA8 as alternate funcion
+                  ^~~~~~~~~~~~~~~~~~~
+..\src\main.c:345:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'OTYPER'
+  GPIOA->OTYPER &= ~(GPIO_OTYPER_OT_8);  //set PA8 to push-pull
+       ^~
+..\src\main.c:345:21: error: 'GPIO_OTYPER_OT_8' undeclared (first use in this function)
+  GPIOA->OTYPER &= ~(GPIO_OTYPER_OT_8);  //set PA8 to push-pull
+                     ^~~~~~~~~~~~~~~~
+..\src\main.c:346:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'OSPEEDR'
+  GPIOA->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR8); //set PA8 as high-speed i/o
+       ^~
+..\src\main.c:346:21: error: 'GPIO_OSPEEDER_OSPEEDR8' undeclared (first use in this function)
+  GPIOA->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR8); //set PA8 as high-speed i/o
+                     ^~~~~~~~~~~~~~~~~~~~~~
+..\src\main.c:349:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'MODER'; did you mean 'ODR'?
+  GPIOC->MODER &= ~(GPIO_MODER_MODER8);
+       ^~
+..\src\main.c:350:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'MODER'; did you mean 'ODR'?
+  GPIOC->MODER |= GPIO_MODER_MODER8_0;  //set PC8 as output
+       ^~
+..\src\main.c:350:18: error: 'GPIO_MODER_MODER8_0' undeclared (first use in this function)
+  GPIOC->MODER |= GPIO_MODER_MODER8_0;  //set PC8 as output
+                  ^~~~~~~~~~~~~~~~~~~
+..\src\main.c:351:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'OTYPER'
+  GPIOC->OTYPER &= ~(GPIO_OTYPER_OT_8);  //set PC8 to push-pull
+       ^~
+..\src\main.c:352:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'OSPEEDR'
+  GPIOC->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR8); //set PC8 as high-speed i/o
+       ^~
+..\src\main.c:355:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'MODER'; did you mean 'ODR'?
+  GPIOA->MODER &= ~((GPIO_MODER_MODER5) | (GPIO_MODER_MODER6) | (GPIO_MODER_MODER7));
+       ^~
+..\src\main.c:355:21: error: 'GPIO_MODER_MODER5' undeclared (first use in this function)
+  GPIOA->MODER &= ~((GPIO_MODER_MODER5) | (GPIO_MODER_MODER6) | (GPIO_MODER_MODER7));
+                     ^~~~~~~~~~~~~~~~~
+..\src\main.c:355:43: error: 'GPIO_MODER_MODER6' undeclared (first use in this function)
+  GPIOA->MODER &= ~((GPIO_MODER_MODER5) | (GPIO_MODER_MODER6) | (GPIO_MODER_MODER7));
+                                           ^~~~~~~~~~~~~~~~~
+..\src\main.c:355:65: error: 'GPIO_MODER_MODER7' undeclared (first use in this function)
+  GPIOA->MODER &= ~((GPIO_MODER_MODER5) | (GPIO_MODER_MODER6) | (GPIO_MODER_MODER7));
+                                                                 ^~~~~~~~~~~~~~~~~
+..\src\main.c:356:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'MODER'; did you mean 'ODR'?
+  GPIOA->MODER |= (GPIO_MODER_MODER5_1) | (GPIO_MODER_MODER6_1) | (GPIO_MODER_MODER7_1);
+       ^~
+..\src\main.c:356:19: error: 'GPIO_MODER_MODER5_1' undeclared (first use in this function)
+  GPIOA->MODER |= (GPIO_MODER_MODER5_1) | (GPIO_MODER_MODER6_1) | (GPIO_MODER_MODER7_1);
+                   ^~~~~~~~~~~~~~~~~~~
+..\src\main.c:356:43: error: 'GPIO_MODER_MODER6_1' undeclared (first use in this function)
+  GPIOA->MODER |= (GPIO_MODER_MODER5_1) | (GPIO_MODER_MODER6_1) | (GPIO_MODER_MODER7_1);
+                                           ^~~~~~~~~~~~~~~~~~~
+..\src\main.c:356:67: error: 'GPIO_MODER_MODER7_1' undeclared (first use in this function)
+  GPIOA->MODER |= (GPIO_MODER_MODER5_1) | (GPIO_MODER_MODER6_1) | (GPIO_MODER_MODER7_1);
+                                                                   ^~~~~~~~~~~~~~~~~~~
+..\src\main.c:357:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'OTYPER'
+  GPIOA->OTYPER &= ~((GPIO_OTYPER_OT_5) | (GPIO_OTYPER_OT_6) | (GPIO_OTYPER_OT_7));
+       ^~
+..\src\main.c:357:22: error: 'GPIO_OTYPER_OT_5' undeclared (first use in this function)
+  GPIOA->OTYPER &= ~((GPIO_OTYPER_OT_5) | (GPIO_OTYPER_OT_6) | (GPIO_OTYPER_OT_7));
+                      ^~~~~~~~~~~~~~~~
+..\src\main.c:357:43: error: 'GPIO_OTYPER_OT_6' undeclared (first use in this function)
+  GPIOA->OTYPER &= ~((GPIO_OTYPER_OT_5) | (GPIO_OTYPER_OT_6) | (GPIO_OTYPER_OT_7));
+                                           ^~~~~~~~~~~~~~~~
+..\src\main.c:357:64: error: 'GPIO_OTYPER_OT_7' undeclared (first use in this function)
+  GPIOA->OTYPER &= ~((GPIO_OTYPER_OT_5) | (GPIO_OTYPER_OT_6) | (GPIO_OTYPER_OT_7));
+                                                                ^~~~~~~~~~~~~~~~
+..\src\main.c:358:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'OSPEEDR'
+  GPIOA->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR5) | (GPIO_OSPEEDER_OSPEEDR6) | (GPIO_OSPEEDER_OSPEEDR7);
+       ^~
+..\src\main.c:358:21: error: 'GPIO_OSPEEDER_OSPEEDR5' undeclared (first use in this function)
+  GPIOA->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR5) | (GPIO_OSPEEDER_OSPEEDR6) | (GPIO_OSPEEDER_OSPEEDR7);
+                     ^~~~~~~~~~~~~~~~~~~~~~
+..\src\main.c:358:48: error: 'GPIO_OSPEEDER_OSPEEDR6' undeclared (first use in this function)
+  GPIOA->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR5) | (GPIO_OSPEEDER_OSPEEDR6) | (GPIO_OSPEEDER_OSPEEDR7);
+                                                ^~~~~~~~~~~~~~~~~~~~~~
+..\src\main.c:358:75: error: 'GPIO_OSPEEDER_OSPEEDR7' undeclared (first use in this function)
+  GPIOA->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR5) | (GPIO_OSPEEDER_OSPEEDR6) | (GPIO_OSPEEDER_OSPEEDR7);
+                                                                           ^~~~~~~~~~~~~~~~~~~~~~
+..\src\main.c:361:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'MODER'; did you mean 'ODR'?
+  GPIOA->MODER &= ~((GPIO_MODER_MODER2) | (GPIO_MODER_MODER3));
+       ^~
+..\src\main.c:361:21: error: 'GPIO_MODER_MODER2' undeclared (first use in this function)
+  GPIOA->MODER &= ~((GPIO_MODER_MODER2) | (GPIO_MODER_MODER3));
+                     ^~~~~~~~~~~~~~~~~
+..\src\main.c:361:43: error: 'GPIO_MODER_MODER3' undeclared (first use in this function)
+  GPIOA->MODER &= ~((GPIO_MODER_MODER2) | (GPIO_MODER_MODER3));
+                                           ^~~~~~~~~~~~~~~~~
+..\src\main.c:362:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'MODER'; did you mean 'ODR'?
+  GPIOA->MODER |= (GPIO_MODER_MODER2_0) | (GPIO_MODER_MODER3_0);
+       ^~
+..\src\main.c:362:19: error: 'GPIO_MODER_MODER2_0' undeclared (first use in this function)
+  GPIOA->MODER |= (GPIO_MODER_MODER2_0) | (GPIO_MODER_MODER3_0);
+                   ^~~~~~~~~~~~~~~~~~~
+..\src\main.c:362:43: error: 'GPIO_MODER_MODER3_0' undeclared (first use in this function)
+  GPIOA->MODER |= (GPIO_MODER_MODER2_0) | (GPIO_MODER_MODER3_0);
+                                           ^~~~~~~~~~~~~~~~~~~
+..\src\main.c:363:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'OTYPER'
+  GPIOA->OTYPER &= ~((GPIO_OTYPER_OT_2) | (GPIO_OTYPER_OT_3));
+       ^~
+..\src\main.c:363:22: error: 'GPIO_OTYPER_OT_2' undeclared (first use in this function)
+  GPIOA->OTYPER &= ~((GPIO_OTYPER_OT_2) | (GPIO_OTYPER_OT_3));
+                      ^~~~~~~~~~~~~~~~
+..\src\main.c:363:43: error: 'GPIO_OTYPER_OT_3' undeclared (first use in this function)
+  GPIOA->OTYPER &= ~((GPIO_OTYPER_OT_2) | (GPIO_OTYPER_OT_3));
+                                           ^~~~~~~~~~~~~~~~
+..\src\main.c:364:7: error: 'GPIO_TypeDef {aka struct <anonymous>}' has no member named 'OSPEEDR'
+  GPIOA->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR2) | (GPIO_OSPEEDER_OSPEEDR3);
+       ^~
+..\src\main.c:364:21: error: 'GPIO_OSPEEDER_OSPEEDR2' undeclared (first use in this function)
+  GPIOA->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR2) | (GPIO_OSPEEDER_OSPEEDR3);
+                     ^~~~~~~~~~~~~~~~~~~~~~
+..\src\main.c:364:48: error: 'GPIO_OSPEEDER_OSPEEDR3' undeclared (first use in this function)
+  GPIOA->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR2) | (GPIO_OSPEEDER_OSPEEDR3);
+                                                ^~~~~~~~~~~~~~~~~~~~~~
+..\src\main.c:370:29: error: 'SPI_CR2_DS' undeclared (first use in this function)
+  SPI1->CR2 = (SPI1->CR2 & (~SPI_CR2_DS)) | (SPI_CR2_DS_2) | (SPI_CR2_DS_1) | (SPI_CR2_DS_0);  //spi 8-bit               //turn on spi
+                             ^~~~~~~~~~
+..\src\main.c:370:45: error: 'SPI_CR2_DS_2' undeclared (first use in this function)
+  SPI1->CR2 = (SPI1->CR2 & (~SPI_CR2_DS)) | (SPI_CR2_DS_2) | (SPI_CR2_DS_1) | (SPI_CR2_DS_0);  //spi 8-bit               //turn on spi
+                                             ^~~~~~~~~~~~
+..\src\main.c:370:62: error: 'SPI_CR2_DS_1' undeclared (first use in this function)
+  SPI1->CR2 = (SPI1->CR2 & (~SPI_CR2_DS)) | (SPI_CR2_DS_2) | (SPI_CR2_DS_1) | (SPI_CR2_DS_0);  //spi 8-bit               //turn on spi
+                                                              ^~~~~~~~~~~~
+..\src\main.c:370:79: error: 'SPI_CR2_DS_0' undeclared (first use in this function)
+  SPI1->CR2 = (SPI1->CR2 & (~SPI_CR2_DS)) | (SPI_CR2_DS_2) | (SPI_CR2_DS_1) | (SPI_CR2_DS_0);  //spi 8-bit               //turn on spi
+                                                                               ^~~~~~~~~~~~
+..\src\main.c:381:19: error: 'GPIO_BSRR_BS_8' undeclared (first use in this function)
+    GPIOC->BSRR |= GPIO_BSRR_BS_8;
+                   ^~~~~~~~~~~~~~
+..\src\main.c:383:19: error: 'GPIO_BSRR_BR_8' undeclared (first use in this function)
+    GPIOC->BSRR |= GPIO_BSRR_BR_8;
+                   ^~~~~~~~~~~~~~
+
+17:09:27 Build Finished (took 185ms)
+
